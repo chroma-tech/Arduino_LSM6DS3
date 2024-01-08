@@ -23,6 +23,8 @@
 
 #define LSM6DS3_ADDRESS            0x6A
 
+#define LSM6DS3_INT1_CTRL          0X0D 
+#define LSM6DS3_INT2_CTRL          0X0E
 #define LSM6DS3_WHO_AM_I_REG       0X0F
 #define LSM6DS3_CTRL1_XL           0X10
 #define LSM6DS3_CTRL2_G            0X11
@@ -32,6 +34,9 @@
 #define LSM6DS3_CTRL6_C            0X15
 #define LSM6DS3_CTRL7_G            0X16
 #define LSM6DS3_CTRL8_XL           0X17
+#define LSM6DS3_CTRL10_C           0x19
+
+#define LSM6DS3_WAKE_UP_SRC        0x1B
 
 #define LSM6DS3_OUTX_L_G           0X22
 #define LSM6DS3_OUTX_H_G           0X23
@@ -46,6 +51,11 @@
 #define LSM6DS3_OUTY_H_XL          0X2B
 #define LSM6DS3_OUTZ_L_XL          0X2C
 #define LSM6DS3_OUTZ_H_XL          0X2D
+
+#define LSM6DS3_TAP_CFG            0x58
+#define LSM6DS3_WAKE_UP_THS        0x5B
+#define LSM6DS3_WAKE_UP_DUR        0x5C
+#define LSM6DS3_MD1_CFG            0x5E
 
 
 
@@ -68,6 +78,8 @@ class LSM6DS3Class {
     virtual float gyroscopeSampleRate(); // Sampling rate of the sensor.
     virtual int gyroscopeAvailable(); // Check for available data from gyroscope
 
+    void enableInactivityDetection();
+    uint8_t getWakeupSource();
 
   protected:
     int readRegister(uint8_t address);

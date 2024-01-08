@@ -70,6 +70,18 @@ int LSM6DS3Class::begin()
   return 1;
 }
 
+void LSM6DS3Class::enableInactivityDetection()
+{
+  writeRegister(LSM6DS3_WAKE_UP_THS, 0x42);
+  writeRegister(LSM6DS3_WAKE_UP_DUR, 0x02);
+
+  // Enable tilt detection
+  writeRegister(LSM6DS3_TAP_CFG, 0xE0);
+
+  // inactive, wakeup -> int1
+  writeRegister(LSM6DS3_MD1_CFG, 0x80);
+}
+
 void LSM6DS3Class::end()
 {
   if (_spi != NULL) {
@@ -206,6 +218,11 @@ int LSM6DS3Class::writeRegister(uint8_t address, uint8_t value)
     }
   }
   return 1;
+}
+
+uint8_t LSM6DS3Class::getWakeupSource()
+{
+  return readRegister(LSM6DS3_WAKE_UP_SRC);
 }
 
 #ifdef ARDUINO_AVR_UNO_WIFI_REV2
