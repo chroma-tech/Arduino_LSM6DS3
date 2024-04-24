@@ -19,28 +19,16 @@
 
 #include "LSM6DS3.h"
 
-LSM6DS3Class::LSM6DS3Class(TwoWire& wire, uint8_t slaveAddress) :
-  _wire(&wire),
-  _spi(NULL),
-  _slaveAddress(slaveAddress)
-{
-}
+LSM6DS3Class::LSM6DS3Class(TwoWire &wire, uint8_t slaveAddress)
+    : _wire(&wire), _spi(NULL), _slaveAddress(slaveAddress) {}
 
-LSM6DS3Class::LSM6DS3Class(SPIClass& spi, int csPin, int irqPin) :
-  _wire(NULL),
-  _spi(&spi),
-  _csPin(csPin),
-  _irqPin(irqPin),
-  _spiSettings(10E6, MSBFIRST, SPI_MODE0)
-{
-}
+LSM6DS3Class::LSM6DS3Class(SPIClass &spi, int csPin, int irqPin)
+    : _wire(NULL), _spi(&spi), _csPin(csPin), _irqPin(irqPin),
+      _spiSettings(10E6, MSBFIRST, SPI_MODE0) {}
 
-LSM6DS3Class::~LSM6DS3Class()
-{
-}
+LSM6DS3Class::~LSM6DS3Class() {}
 
-int LSM6DS3Class::begin()
-{
+int LSM6DS3Class::begin() {
   if (_spi != NULL) {
     pinMode(_csPin, OUTPUT);
     digitalWrite(_csPin, HIGH);
@@ -49,16 +37,30 @@ int LSM6DS3Class::begin()
     _wire->begin();
   }
 
-  if (!(readRegister(LSM6DS3_WHO_AM_I_REG) == 0x6C || readRegister(LSM6DS3_WHO_AM_I_REG) == 0x69 || readRegister(LSM6DS3_WHO_AM_I_REG) == 0x6A)) {
+  if (!(readRegister(LSM6DS3_WHO_AM_I_REG) == 0x6C ||
+        readRegister(LSM6DS3_WHO_AM_I_REG) == 0x69 ||
+        readRegister(LSM6DS3_WHO_AM_I_REG) == 0x6A)) {
     end();
     return 0;
   }
 
-  //set the gyroscope control register to work at 104 Hz, 2000 dps and in bypass mode
+  // // inactivity detection
+  // writeRegister(LSM6DS3_WAKE_UP_THS, 0x42);
+  // writeRegister(LSM6DS3_WAKE_UP_DUR, 0x02);
+
+  // // Enable tilt detection
+  // writeRegister(LSM6DS3_TAP_CFG, 0xE0);
+
+  // // inactive, wakeup -> int1
+  // writeRegister(LSM6DS3_MD1_CFG, 0x80);
+
+  // set the gyroscope control register to work at 104 Hz, 2000 dps and in
+  // bypass mode
   writeRegister(LSM6DS3_CTRL2_G, 0x4C);
 
-  // Set the Accelerometer control register to work at 104 Hz, 4 g,and in bypass mode and enable ODR/4
-  // low pass filter (check figure9 of LSM6DS3's datasheet)
+  // Set the Accelerometer control register to work at 104 Hz, 4 g,and in bypass
+  // mode and enable ODR/4 low pass filter (check figure9 of LSM6DS3's
+  // datasheet)
   writeRegister(LSM6DS3_CTRL1_XL, 0x4A);
 
   // set gyroscope power mode to high performance and bandwidth to 16 MHz
@@ -70,8 +72,7 @@ int LSM6DS3Class::begin()
   return 1;
 }
 
-void LSM6DS3Class::enableInactivityDetection()
-{
+void LSM6DS3Class::enableInactivityDetection() {
   writeRegister(LSM6DS3_WAKE_UP_THS, 0x42);
   writeRegister(LSM6DS3_WAKE_UP_DUR, 0x02);
 
@@ -82,8 +83,7 @@ void LSM6DS3Class::enableInactivityDetection()
   writeRegister(LSM6DS3_MD1_CFG, 0x80);
 }
 
-void LSM6DS3Class::end()
-{
+void LSM6DS3Class::end() {
   if (_spi != NULL) {
     _spi->end();
     digitalWrite(_csPin, LOW);
@@ -95,11 +95,10 @@ void LSM6DS3Class::end()
   }
 }
 
-int LSM6DS3Class::readAcceleration(float& x, float& y, float& z)
-{
+int LSM6DS3Class::readAcceleration(float &x, float &y, float &z) {
   int16_t data[3];
 
-  if (!readRegisters(LSM6DS3_OUTX_L_XL, (uint8_t*)data, sizeof(data))) {
+  if (!readRegisters(LSM6DS3_OUTX_L_XL, (uint8_t *)data, sizeof(data))) {
     x = NAN;
     y = NAN;
     z = NAN;
@@ -114,8 +113,26 @@ int LSM6DS3Class::readAcceleration(float& x, float& y, float& z)
   return 1;
 }
 
-int LSM6DS3Class::accelerationAvailable()
-{
+int LSM6DS3Class::readAccelerationInt(int32_t &x, int32_t &y, int32_t &z) {
+  int16_t data[3];
+
+  if (!readRegisters(LSM6DS3_OUTX_L_XL, (uint8_t *)data, sizeof(data))) {
+    x = 0;
+    y = 0;
+    z = 0;
+
+    return 0;
+  }
+
+  // * 4 because the accelerometer is configured to work at 4g
+  x = (int32_t)data[0] << 2;
+  y = (int32_t)data[1] << 2;
+  z = (int32_t)data[2] << 2;
+
+  return 1;
+}
+
+int LSM6DS3Class::accelerationAvailable() {
   if (readRegister(LSM6DS3_STATUS_REG) & 0x01) {
     return 1;
   }
@@ -123,16 +140,12 @@ int LSM6DS3Class::accelerationAvailable()
   return 0;
 }
 
-float LSM6DS3Class::accelerationSampleRate()
-{
-  return 104.0F;
-}
+float LSM6DS3Class::accelerationSampleRate() { return 104.0F; }
 
-int LSM6DS3Class::readGyroscope(float& x, float& y, float& z)
-{
+int LSM6DS3Class::readGyroscope(float &x, float &y, float &z) {
   int16_t data[3];
 
-  if (!readRegisters(LSM6DS3_OUTX_L_G, (uint8_t*)data, sizeof(data))) {
+  if (!readRegisters(LSM6DS3_OUTX_L_G, (uint8_t *)data, sizeof(data))) {
     x = NAN;
     y = NAN;
     z = NAN;
@@ -147,8 +160,26 @@ int LSM6DS3Class::readGyroscope(float& x, float& y, float& z)
   return 1;
 }
 
-int LSM6DS3Class::gyroscopeAvailable()
-{
+int LSM6DS3Class::readGyroscopeInt(int32_t &x, int32_t &y, int32_t &z) {
+  int16_t data[3];
+
+  if (!readRegisters(LSM6DS3_OUTX_L_G, (uint8_t *)data, sizeof(data))) {
+    x = 0;
+    y = 0;
+    z = 0;
+
+    return 0;
+  }
+
+  // * 2000 because the gyroscope is configured to work at 2000 dps
+  x = (int32_t)data[0] * 2000;
+  y = (int32_t)data[1] * 2000;
+  z = (int32_t)data[2] * 2000;
+
+  return 1;
+}
+
+int LSM6DS3Class::gyroscopeAvailable() {
   if (readRegister(LSM6DS3_STATUS_REG) & 0x02) {
     return 1;
   }
@@ -156,24 +187,19 @@ int LSM6DS3Class::gyroscopeAvailable()
   return 0;
 }
 
-float LSM6DS3Class::gyroscopeSampleRate()
-{
-  return 104.0F;
-}
+float LSM6DS3Class::gyroscopeSampleRate() { return 104.0F; }
 
-int LSM6DS3Class::readRegister(uint8_t address)
-{
+int LSM6DS3Class::readRegister(uint8_t address) {
   uint8_t value;
-  
+
   if (readRegisters(address, &value, sizeof(value)) != 1) {
     return -1;
   }
-  
+
   return value;
 }
 
-int LSM6DS3Class::readRegisters(uint8_t address, uint8_t* data, size_t length)
-{
+int LSM6DS3Class::readRegisters(uint8_t address, uint8_t *data, size_t length) {
   if (_spi != NULL) {
     _spi->beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
@@ -200,8 +226,7 @@ int LSM6DS3Class::readRegisters(uint8_t address, uint8_t* data, size_t length)
   return 1;
 }
 
-int LSM6DS3Class::writeRegister(uint8_t address, uint8_t value)
-{
+int LSM6DS3Class::writeRegister(uint8_t address, uint8_t value) {
   if (_spi != NULL) {
     _spi->beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
@@ -220,13 +245,12 @@ int LSM6DS3Class::writeRegister(uint8_t address, uint8_t value)
   return 1;
 }
 
-uint8_t LSM6DS3Class::getWakeupSource()
-{
+uint8_t LSM6DS3Class::getWakeupSource() {
   return readRegister(LSM6DS3_WAKE_UP_SRC);
 }
 
 #ifdef ARDUINO_AVR_UNO_WIFI_REV2
-  LSM6DS3Class IMU(SPI, SPIIMU_SS, SPIIMU_INT);
+LSM6DS3Class IMU(SPI, SPIIMU_SS, SPIIMU_INT);
 #else
-  LSM6DS3Class IMU_LSM6DS3(Wire, LSM6DS3_ADDRESS);
+LSM6DS3Class IMU_LSM6DS3(Wire, LSM6DS3_ADDRESS);
 #endif
