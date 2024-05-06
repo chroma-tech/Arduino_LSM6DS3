@@ -113,7 +113,7 @@ int LSM6DS3Class::readAcceleration(float &x, float &y, float &z) {
   return 1;
 }
 
-int LSM6DS3Class::readAccelerationInt(int32_t &x, int32_t &y, int32_t &z) {
+int LSM6DS3Class::readAccelerationRaw(int16_t &x, int16_t &y, int16_t &z) {
   int16_t data[3];
 
   if (!readRegisters(LSM6DS3_OUTX_L_XL, (uint8_t *)data, sizeof(data))) {
@@ -124,10 +124,9 @@ int LSM6DS3Class::readAccelerationInt(int32_t &x, int32_t &y, int32_t &z) {
     return 0;
   }
 
-  // * 4 because the accelerometer is configured to work at 4g
-  x = (int32_t)data[0] << 2;
-  y = (int32_t)data[1] << 2;
-  z = (int32_t)data[2] << 2;
+  x = data[0];
+  y = data[1];
+  z = data[2];
 
   return 1;
 }
@@ -160,7 +159,7 @@ int LSM6DS3Class::readGyroscope(float &x, float &y, float &z) {
   return 1;
 }
 
-int LSM6DS3Class::readGyroscopeInt(int32_t &x, int32_t &y, int32_t &z) {
+int LSM6DS3Class::readGyroscopeRaw(int16_t &x, int16_t &y, int16_t &z) {
   int16_t data[3];
 
   if (!readRegisters(LSM6DS3_OUTX_L_G, (uint8_t *)data, sizeof(data))) {
@@ -171,10 +170,9 @@ int LSM6DS3Class::readGyroscopeInt(int32_t &x, int32_t &y, int32_t &z) {
     return 0;
   }
 
-  // * 2000 because the gyroscope is configured to work at 2000 dps
-  x = (int32_t)data[0] * 2000;
-  y = (int32_t)data[1] * 2000;
-  z = (int32_t)data[2] * 2000;
+  x = data[0];
+  y = data[1];
+  z = data[2];
 
   return 1;
 }
